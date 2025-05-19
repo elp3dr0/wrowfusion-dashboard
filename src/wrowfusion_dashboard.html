@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WRowFusion Dashboard</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        h1 { font-size: 1.8rem; }
+        .metric { margin-bottom: 0.5rem; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+    <h1>WRowFusion Real-Time Metrics</h1>
+    <div class="metric">Stroke Rate: <span id="stroke_rate">--</span> spm</div>
+    <div class="metric">Heart Rate: <span id="heart_rate">--</span> bpm</div>
+    <div class="metric">Pace: <span id="pace">--</span> min/500m</div>
+    <div class="metric">Distance: <span id="distance">--</span> m</div>
+    <div class="metric">Elapsed Time: <span id="elapsed_time">--</span> s</div>
+    <div class="metric">Power: <span id="power">--</span> W</div>
+
+    <script>
+        const ws = new WebSocket("ws://127.0.0.1:8765");
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                for (const key in data) {
+                    const el = document.getElementById(key);
+                    if (el) el.textContent = data[key];
+                }
+            } catch (err) {
+                console.error("Error parsing WebSocket message:", err);
+            }
+        };
+
+        ws.onerror = (err) => {
+            console.error("WebSocket error:", err);
+        };
+    </script>
+</body>
+</html>
