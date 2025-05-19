@@ -19,7 +19,8 @@
     <div class="metric">Power: <span id="power">--</span> W</div>
 
     <script>
-        const ws = new WebSocket("ws://127.0.0.1:8765");
+        const ws_scheme = location.protocol === "https:" ? "wss" : "ws";
+        const ws = new WebSocket(`${ws_scheme}://${location.host}`);
 
         ws.onmessage = (event) => {
             try {
