@@ -21,7 +21,7 @@ echo "----------------------------------------------------"
 echo " Copying Caddyfile to serve dashboard..."
 echo "----------------------------------------------------"
 
-sudo cp .src/Caddyfile /etc/caddy/Caddyfile
+sudo cp ./src/Caddyfile /etc/caddy/Caddyfile
 
 echo "----------------------------------------------------"
 echo " Reloading Caddy service..."
