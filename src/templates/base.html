@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ theme|default('') }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}WRowFusion{% endblock %}</title>
+
+  <!-- Theme loader to avoid flash of wrong theme -->
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  {% block header %}
+  <!-- Optional: Include a site-wide header/nav here -->
+  {% endblock %}
+
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}
+    <!-- Page-specific content will go here -->
+    {% endblock %}
+  </main>
+
+  {% block footer %}
+  <!-- Optional: Footer or copyright -->
+  {% endblock %}
+
+  <script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+/* static/css/base.css */
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Root variables */
+:root {
+  --font-family: 'Segoe UI', sans-serif;
+  --font-size: 16px;
+  --colour-bg: #f5f5f5;
+  --colour-fg: #333;
+  --colour-accent: #0077cc;
+  --colour-accent-hover: #005fa3;
+  --colour-muted: #aaa;
+  --spacing: 1rem;
+  --border-radius: 0.5rem;
+}
+
+/* System prefers dark mode, apply dark variables if user has no override */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --colour-bg: #121212;
+    --colour-fg: #eee;
+    --colour-accent: #3399ff;
+    --colour-button-bg: #3399ff;
+    --colour-button-fg: #000;
+  }
+}
+
+/* User override: dark mode */
+:root[data-theme="dark"] {
+  --colour-bg: #121212;
+  --colour-fg: #eee;
+  --colour-accent: #3399ff;
+  --colour-button-bg: #3399ff;
+  --colour-button-fg: #000;
+}
+
+/* Body styling */
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  background: var(--colour-bg);
+  color: var(--colour-fg);
+  line-height: 1.6;
+  padding: var(--spacing);
+}

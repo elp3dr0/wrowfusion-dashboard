@@ -1,0 +1,47 @@
+/* static/css/layout.css */
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--spacing);
+}
+
+/* Header */
+.header {
+  background: var(--colour-accent);
+  color: white;
+  padding: var(--spacing);
+  text-align: centre;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Grid layout (mobile first) */
+.grid {
+  display: grid;
+  gap: var(--spacing);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Footer button bar */
+.footer-buttons {
+  position: fixed;
+  bottom: 1rem;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 var(--spacing);
+}

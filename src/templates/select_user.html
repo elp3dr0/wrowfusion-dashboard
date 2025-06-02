@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="user-select">
+  <h1>Select User</h1>
+
+  <form method="POST" action="{{ url_for('users.select_user') }}">
+    <div class="user-buttons">
+      {% for user in users %}
+        <button
+          class="user-button"
+          name="user_id"
+          value="{{ user.id }}"
+          type="submit"
+        >
+          {{ user.name }}
+        </button>
+      {% endfor %}
+    </div>
+
+    <div class="stay-logged-in">
+      <input type="checkbox" id="stay_logged_in" name="stay_logged_in">
+      <label for="stay_logged_in">Stay Logged In</label>
+    </div>
+  </form>
+
+  <div class="add-user">
+    <form action="{{ url_for('users.add_user') }}" method="get">
+      <button type="submit" class="add-user-button">Add New User</button>
+    </form>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Save 'stay logged in' choice to localStorage
+  document.querySelector('form').addEventListener('submit', function (e) {
+    const checkbox = document.getElementById('stay_logged_in');
+    if (checkbox.checked) {
+      const selectedButton = document.activeElement;
+      if (selectedButton && selectedButton.name === 'user_id') {
+        localStorage.setItem('stay_logged_in_user_id', selectedButton.value);
+      }
+    } else {
+      localStorage.removeItem('stay_logged_in_user_id');
+    }
+  });
+</script>
+{% endblock %}

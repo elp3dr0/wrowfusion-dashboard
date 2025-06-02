@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="p-4">
+  <h1 class="text-2xl font-bold mb-4">Rowing Session</h1>
+  <div class="grid grid-cols-2 gap-4 text-lg">
+    <div>Stroke Rate: <span id="stroke_rate_pm">--</span> spm</div>
+    <div>Stroke Count: <span id="stroke_count">--</span></div>
+    <div>Heart Rate: <span id="heart_rate_bpm">--</span> bpm</div>
+    <div>Pace: <span id="instant_500m_pace_secs">--</span> min/500m</div>
+    <div>Speed: <span id="speed_cmps">--</span> m/s</div>
+    <div>Distance: <span id="total_distance_m">--</span> m</div>
+    <div>Elapsed Time: <span id="elapsed_time_secs">--</span> s</div>
+    <div>Power: <span id="stroke_watts">--</span> W</div>
+    <div>Calories: <span id="total_calories">--</span> Cal</div>
+    <div>Stroke Ratio: <span id="stroke_ratio">--</span></div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const ws_scheme = location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${ws_scheme}://${location.host}`);
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      for (const key in data) {
+        const el = document.getElementById(key);
+        if (el) el.textContent = data[key];
+      }
+    } catch (err) {
+      console.error("Error parsing WebSocket message:", err);
+    }
+  };
+
+  ws.onerror = (err) => {
+    console.error("WebSocket error:", err);
+  };
+</script>
+{% endblock %}

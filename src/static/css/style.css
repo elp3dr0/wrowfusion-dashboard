@@ -1,0 +1,13 @@
+/* static/css/style.css */
+
+/* Foundation styles */
+@import url("base.css");
+
+/* Layout: page structure, grid, flex, spacing */
+@import url("layout.css");
+
+/* UI Elements: buttons, forms, navbars, etc. */
+@import url("components.css");
+
+/* Dark mode rules (respects system or overrides) */
+@import url("darkmode.css");
