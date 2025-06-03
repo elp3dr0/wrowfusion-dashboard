@@ -15,7 +15,7 @@ echo "----------------------------------------------------"
 sudo mkdir -p /var/www/wrowfusion-dashboard
 
 # Copy your dashboard HTML into that directory
-sudo cp ./src/index.html /var/www/wrowfusion-dashboard/index.html
+#sudo cp ./src/index.html /var/www/wrowfusion-dashboard/index.html
 
 echo "----------------------------------------------------"
 echo " Copying Caddyfile to serve dashboard..."

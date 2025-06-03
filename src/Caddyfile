@@ -1,14 +1,9 @@
 http://wrowfusion.local.example.com {
-    root * /var/www/wrowfusion-dashboard
-    file_server
 
-    @ws {
-        header Connection *Upgrade*
-        header Upgrade websocket
-    }
-    reverse_proxy @ws localhost:8765
+    reverse_proxy localhost:5000
 
     encode gzip
+    
     log {
         output file /var/log/caddy/access.log {
             roll_size 10mb
