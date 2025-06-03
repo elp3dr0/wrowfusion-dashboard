@@ -18,11 +18,14 @@
 
 /* Card-style user selector */
 .user-card {
+  margin: 8px;
+  display: inline-block;
+  min-width: 150px;
   background: white;
   border: 1px solid var(--colour-muted);
   border-radius: var(--border-radius);
   padding: var(--spacing);
-  text-align: centre;
+  text-align: center;
   cursor: pointer;
 }
 
@@ -34,7 +37,7 @@
 .checkbox-group {
   margin-top: var(--spacing);
   display: flex;
-  align-items: centre;
+  align-items: center;
   gap: 0.5rem;
 }
 
