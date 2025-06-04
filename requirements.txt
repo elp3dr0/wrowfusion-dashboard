@@ -1,0 +1,4 @@
+flask           # Used to create an API
+dotenv          # Load environment variables from a .env file allowing local configuration of secret keys etc.
+gunicorn        # WSIG server which provides the service to expose the app
+requests        # For making HTTP requests of the backend wrowfusion api

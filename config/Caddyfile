@@ -1,13 +1,18 @@
-http://wrowfusion.local.example.com {
-        reverse_proxy localhost:5000
+#DASHBOARD_URL# {
 
-        encode gzip
+    # Proxy wrowfusion-dashboard frontend
+    route /* {
+        reverse_proxy unix//run/wrowfusion-dashboard/wrowfusion-dashboard.sock
+        # Or if running on TCP:
+        # reverse_proxy 127.0.0.1:5002
+    }
 
-        log {
-                output file /var/log/caddy/access.log {
-                        roll_size 10mb
-                        roll_keep 5
-                        roll_keep_for 720h
-                }
+    # Enable logging if desired
+    log {
+        output file /var/log/caddy/wrowfusion_access.log {
+            roll_size 10mb
+            roll_keep 5
+            roll_keep_for 720h
         }
+    }
 }

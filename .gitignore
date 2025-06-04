@@ -1,0 +1,12 @@
+# Virtual environment
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Local config
+*logging.conf
+*.env
+
+# Local logs
+logs/*

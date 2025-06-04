@@ -1,0 +1,32 @@
+[Unit]
+Description=WRowFusion Dashboard
+After=network.target wrowfusion.service
+
+[Service]
+Type=simple
+User=#APP_USER#
+Group=#APP_USER#
+WorkingDirectory=#REPO_DIR#
+EnvironmentFile=#REPO_DIR#/.env
+
+RuntimeDirectory=wrowfusion-dashboard
+RuntimeDirectoryMode=0755
+
+ExecStart=#REPO_DIR#/venv/bin/gunicorn \
+    --bind unix:/run/wrowfusion-dashboard/wrowfusion-dashboard.sock \
+    --umask 007 \
+    --workers 1 \
+    --threads 2 \
+    --log-level info \
+    --access-logfile - \
+    --error-logfile - \
+    'src:app'
+
+Restart=on-failure
+RestartSec=3
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

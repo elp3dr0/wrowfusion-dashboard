@@ -21,7 +21,7 @@
 {% block scripts %}
 <script>
   const ws_scheme = location.protocol === "https:" ? "wss" : "ws";
-  const ws = new WebSocket(`${ws_scheme}://${location.host}`);
+  const ws = new WebSocket(`${ws_scheme}://${location.hostname}:${{ ws_port }}`);
 
   ws.onmessage = (event) => {
     try {
