@@ -41,8 +41,11 @@ echo " ...putting you in pole position to control your workouts. "
 echo " It's optimised for a Raspberry Pi, including the Zero models."
 echo
 echo
+sleep 1
 echo "            On your marks..."
+sleep 0.5
 echo "                 ... Get set..."
+sleep 0.5
 echo "                          ... Go!"
 echo
 

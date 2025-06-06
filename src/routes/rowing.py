@@ -7,7 +7,7 @@ rowing_bp = Blueprint("rowing", __name__)
 @rowing_bp.route("/rowing")
 def show_rowing_page():
     user_id = session.get("user_id")
-    websocket_port = os.environ.get("WRFD_WROWFUSION_WEBSOCKET_PORT", 8765)
+    websocket_port = os.getenv("WRFD_WROWFUSION_WEBSOCKET_PORT", 8765)
     if not user_id:
         cookie_user_id = request.cookies.get("stay_logged_in_user_id")
         if cookie_user_id:

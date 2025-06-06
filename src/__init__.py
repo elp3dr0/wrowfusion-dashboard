@@ -27,13 +27,13 @@ def create_dashboard_app():
         template_folder="templates"
     )
 
-    app.config['SECRET_KEY'] = os.environ.get("WRFD_SECRET_KEY", "changeme")
+    app.config['SECRET_KEY'] = os.getenv("WRFD_SECRET_KEY", "changeme")
 
     # Set backend API base URL. Note that this assumes that wrowfusion-dashboard is running on the 
     # same host as wrowfusion.
-    api_scheme = os.environ.get("WRFD_WROWFUSION_API_SCHEME", "http")
-    api_host = os.environ.get("WRFD_WROWFUSION_API_HOST", "127.0.0.1")
-    api_port = os.environ.get("WRFD_WROWFUSION_API_PORT", "5001")
+    api_scheme = os.getenv("WRFD_WROWFUSION_API_SCHEME", "http")
+    api_host = os.getenv("WRFD_WROWFUSION_API_HOST", "127.0.0.1")
+    api_port = os.getenv("WRFD_WROWFUSION_API_PORT", "5001")
     
     # NB: Do not include a trailing slash in the BACKEND_API string.
     app.config["BACKEND_API_URL"] = f"{api_scheme}://{api_host}:{api_port}/api"
