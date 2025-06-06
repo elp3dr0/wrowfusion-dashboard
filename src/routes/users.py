@@ -1,40 +1,39 @@
 import requests
 from flask import (
     Blueprint, 
+    Response,
     redirect, 
     url_for, 
     flash,
     render_template,
     request, 
     session, 
-    current_app, 
+    current_app,
 ) 
+from flask.typing import ResponseReturnValue
+from src.utils.backend_api import get_users_from_backend
 
 users_bp = Blueprint("users", __name__)
 
 @users_bp.route("/", methods=["GET"])
-def root_redirect():
-    try:
-        api_base = current_app.config["BACKEND_API_URL"]
-        response = requests.get(f"{api_base}/users")
-        response.raise_for_status()
-        users = response.json()
-    except Exception as e:
-        current_app.logger.error(f"Failed to fetch users: {e}")
+def root_redirect() -> ResponseReturnValue:
+    success, users = get_users_from_backend()
+
+    if not success:
         return "Error connecting to backend", 500
 
     saved_user_id = request.cookies.get("stay_logged_in_user_id")
 
-    if saved_user_id and any(str(u["id"]) == saved_user_id for u in users):
+    if saved_user_id and any(str(u.get("id")) == saved_user_id for u in users):
         return redirect(url_for("rowing.show_rowing_page", user=saved_user_id))
 
-    if len(users) == 1 and users[0]["id"] == 0:
+    if len(users) == 1 and users[0].get("id") == 0:
         return redirect(url_for("rowing.show_rowing_page", user=0))
 
     return redirect(url_for("users.select_user"))
 
 @users_bp.route("/select-user", methods=["GET", "POST"])
-def select_user():
+def select_user() -> ResponseReturnValue:
     
     api_base = current_app.config["BACKEND_API_URL"]
 
@@ -46,29 +45,35 @@ def select_user():
         stay_logged_in = request.form.get("stay_logged_in")
 
         # Validate against API
-        resp = requests.post(f"{api_base}/validate_user", json={"user_id": user_id})
-        if resp.status_code != 200 or not resp.json().get("valid"):
-            current_app.logger.warning(f"User {user_id} could not be selected, because there is user with that id.")
+        try:
+            validation_api_resp = requests.post(f"{api_base}/validate_user", json={"user_id": user_id})
+            validation_api_resp.raise_for_status()
+            valid = validation_api_resp.json().get("valid", False)
+        except Exception as e:
+            current_app.logger.warning(f"Failed to validate user {user_id}: {e}")
+            return render_template("select_user.html", users=[], error="Error validating user.")
+        
+        if not valid:
+            current_app.logger.warning(f"User {user_id} could not be selected; invalid user id.")
             return render_template("select_user.html", users=[], error="Invalid user selected.")
 
         session["user_id"] = user_id
-        response = redirect(url_for("rowing.show_rowing_page", user=user_id))
+        flask_resp = redirect(url_for("rowing.show_rowing_page", user=user_id))
 
         if stay_logged_in:
-            response.set_cookie("stay_logged_in_user_id", user_id, max_age=60*60*24*30)
+            flask_resp.set_cookie("stay_logged_in_user_id", user_id, max_age=60*60*24*60)
         else:
-            response.delete_cookie("stay_logged_in_user_id")
+            flask_resp.delete_cookie("stay_logged_in_user_id")
 
         current_app.logger.info(f"User {user_id} selected (stay_logged_in={bool(stay_logged_in)})")
-        return response
+        return flask_resp
 
-    # Fetch users from API
-    users_resp = requests.get(f"{api_base}/users")
-    users = users_resp.json().get("users", []) if users_resp.ok else []
+    # Handle GET: Fetch users from API
+    success, users = get_users_from_backend()
+    if not success:
+        current_app.logger.warning(f"Failed to fetch users from backend API")
+        users = []
 
-    if not users_resp.ok:
-        current_app.logger.warning("Failed to fetch users from backend API.")
-    
     return render_template("select_user.html", users=users)
 
 
@@ -85,15 +90,22 @@ def add_user_route():
         payload = {"username": username}
 
         try:
-            resp = requests.post(f"{api_base}/users", json=payload)  # POST to /users per backend
-            if resp.status_code == 409:
+            users_api_resp = requests.post(f"{api_base}/users", json=payload)
+            if users_api_resp.status_code == 409:
                 flash("That user name is already taken.", "error")
                 current_app.logger.warning(f"Add user failed - username already exists: '{username}'")
                 return redirect(url_for("users.add_user_route"))
 
-            resp.raise_for_status()
-            user_id = resp.json().get("id") or resp.json().get("user_id")
-
+            users_api_resp.raise_for_status()
+            try:
+                users_json = users_api_resp.json()
+            except ValueError:
+                raise ValueError("Backend returned invalid JSON")
+            
+            if not isinstance(users_api_resp, dict):
+                raise ValueError("Unexpected response format from backend.")
+            
+            user_id = users_json.get("id")
             if not user_id:
                 raise ValueError("User ID not returned from backend")
 

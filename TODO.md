@@ -30,3 +30,4 @@ def index():
 - [ ] Implement a conf file and use it to create a clean .env file during install. Be smart about updating values rather than overwriting .env
 - [ ] During install, copy the working directory to temp and then at the end copy back the logs, database and .env. Then nuke the temp copy once everything else is successful. On error, roll back the installation and re-implement the temp working directory. Keep an installation log.
 - [ ] Generate the secret key for the environment file during install.sh
+- [ ] Make sure there are loggers for each python module and that it has the logger.--name__ line at the top.

@@ -1,4 +1,7 @@
 #DASHBOARD_URL# {
+        route /api/* {
+                reverse_proxy 127.0.0.1:5001
+        }
 
     # Proxy wrowfusion-dashboard frontend
     route /* {
