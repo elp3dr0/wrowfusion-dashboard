@@ -61,9 +61,13 @@ if [ ! -f "$CONFIG_FILE" ]; then
   echo
   echo " It looks like the configuration file is missing so the installation can't proceed."
   echo " Please create the file by copying and then editing the example configuration: "
+  echo
   echo " - $EXAMPLE_CONFIG_FILE"
+  echo
   echo " and saving it here:"
+  echo
   echo " - $CONFIG_FILE"
+  echo
   echo " Then run the install script again."
   echo
   echo " Exiting for now."
