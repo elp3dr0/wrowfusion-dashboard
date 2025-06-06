@@ -10,7 +10,7 @@ WorkingDirectory=#REPO_DIR#
 EnvironmentFile=#SERVICE_ENV_FILE_PATH#
 
 RuntimeDirectory=wrowfusion-dashboard
-RuntimeDirectoryMode=0755
+RuntimeDirectoryMode=0770
 
 ExecStart=#REPO_DIR#/venv/bin/gunicorn \
     --bind unix:/run/wrowfusion-dashboard/wrowfusion-dashboard.sock \
