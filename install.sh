@@ -41,12 +41,13 @@ echo " ...putting you in pole position to control your workouts. "
 echo " It's optimised for a Raspberry Pi, including the Zero models."
 echo
 echo
-sleep 1
+sleep 1.5
 echo "            On your marks..."
-sleep 0.5
+sleep 1
 echo "                 ... Get set..."
-sleep 0.5
+sleep 1
 echo "                          ... Go!"
+sleep 1
 echo
 
 ## Create a temp directory to use for modifying templates
@@ -167,6 +168,7 @@ sudo apt install -y caddy
 echo
 
 echo " - Copying our Caddyfile and giving caddy access to our application..."
+echo
 
 # Add caddy user to the group that runs wrowfusion dashboard so that it can 
 # read and write to the gunicorn unix socket
@@ -203,7 +205,7 @@ section_divider "Configuring the variables for the local environment..."
 echo
 
 if [ -z "$FLASK_SECRET_KEY" ]; then
-    echo "No secret key found in config. Generating one..."
+    echo " -No secret key found in config. Generating one..."
     FLASK_SECRET_KEY=$(openssl rand -hex 32)
     echo
 fi
@@ -219,11 +221,13 @@ declare -A REQUIRED_VARS=(
   ["WRFD_LOG_DIR"]="$LOG_DIR"
 )
 
-mkdir -p "$(dirname "$SERVICE_ENV_FILE_PATH")"
+sudo mkdir -p "$(dirname "$SERVICE_ENV_FILE_PATH")"
+sudo chown "$APP_USER":"$APP_USER" "$(dirname "$SERVICE_ENV_FILE_PATH")"
 # Ensure .env file exists
 if [ ! -f "$SERVICE_ENV_FILE_PATH" ]; then
   touch "$SERVICE_ENV_FILE_PATH"
 fi
+sudo chown "$APP_USER":"$APP_USER" "$SERVICE_ENV_FILE_PATH"
 
 # Check and add missing keys
 for KEY in "${!REQUIRED_VARS[@]}"; do
