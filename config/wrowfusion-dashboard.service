@@ -7,7 +7,7 @@ Type=simple
 User=#APP_USER#
 Group=#APP_USER#
 WorkingDirectory=#REPO_DIR#
-EnvironmentFile=#REPO_DIR#/.env
+EnvironmentFile=#ENV_FILE_PATH#
 
 RuntimeDirectory=wrowfusion-dashboard
 RuntimeDirectoryMode=0755

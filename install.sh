@@ -1,148 +1,277 @@
 #!/bin/bash
 
-#########################################################################
-# wrowfusion will be installed in the following directory. This script
-# will create the directory if it doesn't already exist. (Do not include
-# a trailing slash / )
-app_dir="/opt/wrowfusion-dashboard"
+set -euo pipefail  # Exit the script if any command fails or if an undefined variable is used
 
-# The application will be run on startup by the following system user.
-# This script will create this system user.
-app_user="wrowfusion"
+# Define helper functions
+print_line() {
+  local char="${1:--}"
+  local count="${2:-70}"
+  printf '%*s\n' "$count" '' | tr ' ' "$char"
+}
 
-dashboard_url="wrowfusion.local.example.com"
-#########################################################################
+section_divider() {
+  local width=70
+  local text="$1"
 
-set -e
+  print_line "=" "$width"
+  # Wrap the input text to fit within the width and indent each line by 1 space
+  echo "$text" | fold -s -w $((width - 1)) | while read -r line; do
+    echo " $line"
+  done
+  print_line "=" "$width"
+  
+}
 
-echo "----------------------------------------------"
-echo " Stop any existing wrowfusion-dashboard service."
-echo "----------------------------------------------"
-echo " "
+# Script logic
 
-if systemctl is-active --quiet "wrowfusion-dashboard"; then
-    echo " Stopping existing wrowfusion-dashboard service..."
-    sudo systemctl stop "wrowfusion-dashboard"
-else
-    echo " wrowfusion-dashboard is not running."
+echo
+echo
+echo
+echo
+echo "   \ \      / _ \                __|          _)               "
+echo "    \ \ \  /    /   _ \ \ \  \ / _| |  | (_-<  |   _ \    \    "
+echo "     \_/\_/  _|_\ \___/  \_/\_/ _| \_,_| ___/ _| \___/ _| _|   "
+echo '           |              |     |                         | '
+echo '        _` |   _` | (_-<    \    _ \   _ \   _` |   _| _` | '
+echo '      \__,_| \__,_| ___/ _| _| _.__/ \___/ \__,_| _| \__,_| '
+echo
+echo 
+echo " This installs the local dashboard for WRowFusion... "
+echo " ...putting you in pole position to control your workouts. "
+echo " It's optimised for a Raspberry Pi, including the Zero models."
+echo
+echo
+echo "            On your marks..."
+echo "                 ... Get set..."
+echo "                          ... Go!"
+echo
+
+## Create a temp directory to use for modifying templates
+section_divider "Creating a temporary working directory and loading the installation configuration file..."
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="$SCRIPT_DIR/wrowfusion-dashboard.conf"
+EXAMPLE_CONFIG_FILE="$SCRIPT_DIR/wrowfusion-dashboard.example.conf"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo
+  echo " It looks like the configuration file is missing so the installation can't proceed."
+  echo " Please create the file by copying and then editing the example configuration: "
+  echo " - $EXAMPLE_CONFIG_FILE"
+  echo " and saving it here:"
+  echo " - $CONFIG_FILE"
+  echo " Then run the install script again."
+  echo
+  echo " Exiting for now."
+  exit 1
 fi
 
-echo "----------------------------------------------"
-echo " Configure system user ${app_user}"
-echo "----------------------------------------------"
-echo " "
+# Temp dir for manipulating service files to local environment before deployment
+TEMP_DIR=$(mktemp -d)
+# Temp backup directory for storing existing installation before overwriting with the new installation
+BACKUP_DIR="/var/tmp/wrowfusion-dashboard_backup_$(date +%Y%m%d_%H%M%S)"
+BACKUP_PATTERN="/var/tmp/wrowfusion-dashboard_backup_*"
+MAX_BACKUPS=3
 
-if ! id "$app_user" &>/dev/null; then
-  if ! sudo useradd --system --no-create-home --shell /usr/sbin/nologin "$app_user"; then
-      echo "Failed to create user $app_user. Exiting."
+# Load configuration
+source "$CONFIG_FILE"
+echo
+echo " Done"
+echo
+
+# Rollback function triggered on error
+restore_backup() {
+  if [ -d "$TMP_BACKUP_DIR" ]; then
+    echo " - Install failed. Restoring from backup..."
+    rm -rf "$APP_DIR"
+    mv "$TMP_BACKUP_DIR" "$APP_DIR"
+    echo " - Rollback complete."
+    echo " - Exiting"
+  elif [ -d "$APP_DIR" ]
+    echo " - Install failed. Previous installation remains unchanged." >&2
+  else
+    echo " - Install failed. Exiting." >&2
+  fi
+}
+trap restore_backup ERR
+
+# Stop wrowfusion-dashboard service
+section_divider "Stopping any wrowfusion-dashboard services if they are already running..."
+echo
+
+if systemctl is-active --quiet "wrowfusion-dashboard"; then
+    echo " - Stopping existing wrowfusion-dashboard service..."
+    sudo systemctl stop "wrowfusion-dashboard"
+else
+    echo " - wrowfusion-dashboard service is not running."
+fi
+echo
+echo " Done."
+echo
+
+# Create the system user that will run the app
+section_divider "Configuring a system user ${APP_USER} to run the application..."
+echo
+
+if ! id "$APP_USER" &>/dev/null; then
+  if ! sudo useradd --system --no-create-home --shell /usr/sbin/nologin "$APP_USER"; then
+      echo " - Failed to create user $APP_USER. Exiting."
+      echo
       exit 1
   fi
 fi
-
 echo " Done."
-echo " "
-echo "----------------------------------------------------"
-echo " Installing Caddy..."
-echo "----------------------------------------------------"
+echo
 
+# Copy the application files
+section_divider "Installing the application in the directory ${APP_DIR}..."
+echo
+
+if [ -d "$APP_DIR" ]; then
+  echo " - Creating temporary backup of the existing $APP_DIR..."
+  cp -a "$APP_DIR" "$BACKUP_DIR"
+  echo
+  echo " Done: Backup created at $BACKUP_DIR"
+  echo
+
+  if cp -a "$APP_DIR" "$BACKUP_DIR"; then
+    echo " - Removing existing application directory..."
+    rm -rf "$APP_DIR"
+    echo
+    echo " Done."
+    echo
+  else
+    echo "Backup failed; aborting removal." >&2
+    exit 1
+  fi
+fi
+
+echo " - Copying application files to $APP_DIR..."
+sudo mkdir -p "$APP_DIR"
+sudo cp -r "$SCRIPT_DIR"/* "$APP_DIR/"
+sudo chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+echo
+echo " Done."
+echo
+
+# Install and configure Caddy
+section_divider "Installing and configuring Caddy to give the dashboard a nice URL..."
+echo
+
+echo " - Updating system-package cache and installing caddy..."
 sudo apt update
 sudo apt install -y caddy
+echo
+
+echo " - Copying our Caddyfile and giving caddy access to our application..."
+
 # Add caddy user to the group that runs wrowfusion dashboard so that it can 
 # read and write to the gunicorn unix socket
 sudo usermod -aG wrowfusion caddy
 
+cp "$APP_DIR/config/Caddyfile" "$TEMP_DIR/Caddyfile"
+sed -i 's@#DASHBOARD_URL#@'"$DASHBOARD_URL"'@g' "$TEMP_DIR/Caddyfile"
+sudo caddy fmt --overwrite "$TEMP_DIR/Caddyfile"
+sudo install -o caddy -g caddy -m 0644 "$TEMP_DIR/Caddyfile" /etc/caddy/Caddyfile
+rm -f "$TEMP_DIR/Caddyfile"
 echo " Done."
-echo " "
-echo "----------------------------------------------"
-echo " Install the application in the directory:"
-echo " ${app_dir}"
-echo "----------------------------------------------"
-echo " "
+echo
 
+# Create the virtual environment
+section_divider "Setting up a virtual environment to keep everything nicely contained..."
+echo
 
-echo " Cleaning any existing $app_dir..."
-sudo rm -rf "$app_dir"/*
-
-sudo mkdir -p "$app_dir"
-
+sudo -u "$APP_USER" python3 -m venv "$APP_DIR"/venv
 echo " Done."
+echo
 
-echo " Copying application files to $app_dir..."
-script_dir=$(cd "$(dirname "$0")" && pwd)
-sudo cp -r "$script_dir"/src/* "$app_dir/"
-sudo chown -R "$app_user:$app_user" "$app_dir"
+# Install python dependencies
+section_divider "Installing python modules needed by WRowFusion..."
+echo
 
-echo " Done."
-echo " "
-echo "----------------------------------------------"
-echo " Setting up virtual environment        "
-echo "----------------------------------------------"
-echo " "
-
-sudo -u "$app_user" python3 -m venv "$app_dir"/venv
+sudo -u "$APP_USER" "$APP_DIR"/venv/bin/python3 -m pip install --upgrade --no-cache-dir pip setuptools wheel
+sudo -u "$APP_USER" "$APP_DIR"/venv/bin/python3 -m pip install --no-cache-dir -r "$APP_DIR"/requirements.txt
 
 echo " Done."
-echo " "
-echo "----------------------------------------------"
-echo " Install python modules needed by WRowFusion"
-echo "----------------------------------------------"
-echo " "
+echo
 
-sudo -u "$app_user" "$app_dir"/venv/bin/python3 -m pip install --upgrade --no-cache-dir pip setuptools wheel
-sudo -u "$app_user" "$app_dir"/venv/bin/python3 -m pip install --no-cache-dir -r "$app_dir"/requirements.txt
+## Set environment variables
+section_divider "Configuring the variables for the local environment..."
+echo
+
+if [ -z "$FLASK_SECRET_KEY" ]; then
+    echo "No secret key found in config. Generating one..."
+    FLASK_SECRET_KEY=$(openssl rand -hex 32)
+    echo
+fi
+
+# Define required key-value pairs
+declare -A REQUIRED_VARS=(
+  ["WRF_SECRET_KEY"]="$FLASK_SECRET_KEY"
+  ["WRF_DB_FILE_PATH"]="$DB_FILE_PATH"
+  ["WRF_LOG_DIR"]="$LOG_DIR"
+  ["WRF_WEBSOCKET_PORT"]="$WEBSOCKET_PORT"
+)
+
+# Ensure .env file exists
+if [ ! -f "$ENV_FILE_PATH" ]; then
+  touch "$ENV_FILE_PATH"
+fi
+
+# Check and add missing keys
+for KEY in "${!REQUIRED_VARS[@]}"; do
+  if ! grep -q "^${KEY}=" "$ENV_FILE_PATH"; then
+    echo "${KEY}=${REQUIRED_VARS[$KEY]}" >> "$ENV_FILE_PATH"
+  fi
+done
+echo " Done."
+echo
+
+## Configure logging
+section_divider "Configuring logging..."
+echo
+
+sudo -u "$APP_USER" cp "$APP_DIR"/config/logging_orig.conf "$APP_DIR"/config/logging.conf
 
 echo " Done."
-echo " "
-echo "----------------------------------------------"
-echo " Configure logging for the local environment"
-echo "----------------------------------------------"
-echo " "
+echo
 
-sudo -u "$app_user" cp "$app_dir"/config/logging_orig.conf "$app_dir"/config/logging.conf
-
-echo " Done."
-echo " "
-echo "----------------------------------------------"
-echo " Start WRowFusion Dashboard when system boots"
-echo "----------------------------------------------"
-echo " "
-
-sudo cp "$app_dir"/config/wrowfusion-dashboard.service /etc/systemd/system/wrowfusion-dashboard.service
-sudo sed -i 's@#REPO_DIR#@'"$app_dir"'@g' /etc/systemd/system/wrowfusion-dashboard.service
-sudo sed -i 's@#APP_USER#@'"$app_user"'@g' /etc/systemd/system/wrowfusion-dashboard.service
+## Create WRowFusion dashboard systemd service
+section_divider "Configuring WRowFusion Dashboard to launch at system start-up..."
+echo
+echo " - Launch the dashboard app at start up..."
+cp "$APP_DIR"/config/wrowfusion-dashboard.service "$TEMP_DIR"/wrowfusion-dashboard.service
+sed -i 's@#REPO_DIR#@'"$APP_DIR"'@g' "$TEMP_DIR"/wrowfusion-dashboard.service
+sed -i 's@#APP_USER#@'"$APP_USER"'@g' "$TEMP_DIR"/wrowfusion-dashboard.service
+sed -i 's@#ENV_FILE_PATH#@'"$ENV_FILE_PATH"'@g' "$TEMP_DIR"/wrowfusion-dashboard.service
+sudo mv "$TEMP_DIR"/wrowfusion-dashboard.service /etc/systemd/system/wrowfusion-dashboard.service
 sudo chmod 644 /etc/systemd/system/wrowfusion-dashboard.service
 sudo systemctl daemon-reload
 sudo systemctl enable wrowfusion-dashboard
-
+echo
 echo " Done."
-echo " "
-echo "----------------------------------------------"
-echo " Restart services and run wrowfusion dashboard"
-echo " service"
-echo "----------------------------------------------"
-echo " "
+echo
+
+## (Re-) Start all the necessary services
+section_divider "Starting everything up..."
+echo
 
 sudo systemctl start wrowfusion-dashboard
-
-
-echo " Done."
-echo " "
-echo "----------------------------------------------------"
-echo " Copying Caddyfile to serve dashboard..."
-echo "----------------------------------------------------"
-
-sudo cp ./config/Caddyfile /etc/caddy/Caddyfile
-sudo sed -i 's@#DASHBOARD_URL#@'"$dashboard_url"'@g' /etc/caddy/Caddyfile
-sudo caddy fmt --overwrite /etc/caddy/Caddyfile
-
-echo " Done."
-echo " "
-echo "----------------------------------------------------"
-echo " Reloading Caddy service..."
-echo "----------------------------------------------------"
-
 sudo systemctl reload caddy
 
 echo " Done."
-echo " "
-echo "Caddy installed and configured to serve WRowFusion dashboard."
+echo
+
+## Clean up backups
+section_divider "Cleaning up temporary backups..."
+echo
+
+# List backups sorted by newest first, skip the first $MAX_BACKUPS, then delete the rest
+ls -td $BACKUP_PATTERN 2>/dev/null | tail -n +$((MAX_BACKUPS + 1)) | xargs -r rm -rf
+echo
+
+## Installation complete!
+section_divider "Installation complete!"
+echo
+
+exit 0
