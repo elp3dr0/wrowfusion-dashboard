@@ -4,13 +4,12 @@ import pathlib
 import os
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.absolute()
-
-log_dir = PROJECT_ROOT / 'logs'
+log_dir = os.getenv("LOG_DIR", "/var/log/wrowfusion-dashboard")
 os.makedirs(log_dir, exist_ok=True)
 
-loggerconfigpath = str(PROJECT_ROOT / 'config' / 'logging.conf')
-log_path = str(log_dir / "wrowfusion-dashboard.log")
-logging.config.fileConfig(loggerconfigpath, defaults={"log_path": log_path}, disable_existing_loggers=False)
+logger_config_path = str(PROJECT_ROOT / 'config' / 'logging.conf')
+log_path = pathlib.Path(log_dir) / "wrowfusion-dashboard.log"
+logging.config.fileConfig(str(logger_config_path), defaults={"log_path": str(log_path)}, disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
 
 from flask import Blueprint, Flask

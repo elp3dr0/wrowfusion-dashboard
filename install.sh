@@ -81,10 +81,10 @@ echo
 
 # Rollback function triggered on error
 restore_backup() {
-  if [ -d "$TMP_BACKUP_DIR" ]; then
+  if [ -d "$BACKUP_DIR" ]; then
     echo " - Install failed. Restoring from backup..."
     rm -rf "$APP_DIR"
-    mv "$TMP_BACKUP_DIR" "$APP_DIR"
+    mv "$BACKUP_DIR" "$APP_DIR"
     echo " - Rollback complete."
     echo " - Exiting"
   elif [ -d "$APP_DIR" ]; then
@@ -129,12 +129,12 @@ echo
 
 if [ -d "$APP_DIR" ]; then
   echo " - Creating temporary backup of the existing $APP_DIR..."
-  cp -a "$APP_DIR" "$BACKUP_DIR"
-  echo
-  echo " Done: Backup created at $BACKUP_DIR"
-  echo
+  mkdir -p "$BACKUP_DIR"
 
-  if cp -a "$APP_DIR" "$BACKUP_DIR"; then
+  if cp -a "$APP_DIR/." "$BACKUP_DIR"; then
+    echo
+    echo " Done: Backup created at $BACKUP_DIR"
+    echo
     echo " - Removing existing application directory..."
     rm -rf "$APP_DIR"
     echo
@@ -207,12 +207,16 @@ fi
 
 # Define required key-value pairs
 declare -A REQUIRED_VARS=(
-  ["WRF_SECRET_KEY"]="$FLASK_SECRET_KEY"
-  ["WRF_DB_FILE_PATH"]="$DB_FILE_PATH"
-  ["WRF_LOG_DIR"]="$LOG_DIR"
-  ["WRF_WEBSOCKET_PORT"]="$WEBSOCKET_PORT"
+  ["WRFD_SECRET_KEY"]="$FLASK_SECRET_KEY"
+  ["WRFD_WROWFUSION_API_SCHEME"]="$WROWFUSION_API_SCHEME"
+  ["WRFD_WROWFUSION_API_HOST"]="$WROWFUSION_API_HOST"
+  ["WRFD_WROWFUSION_API_PORT"]="$WROWFUSION_API_PORT"
+  ["WRFD_WROWFUSION_WEBSOCKET_PORT"]="$WROWFUSION_WEBSOCKET_PORT"
+  ["WRFD_DASHBOARD_URL"]="$DASHBOARD_URL"
+  ["WRFD_LOG_DIR"]="$LOG_DIR"
 )
 
+mkdir -p "$(dirname "$ENV_FILE_PATH")"
 # Ensure .env file exists
 if [ ! -f "$ENV_FILE_PATH" ]; then
   touch "$ENV_FILE_PATH"
@@ -231,10 +235,22 @@ echo
 section_divider "Configuring logging..."
 echo
 
+echo " - Copying logger.conf..."
 sudo -u "$APP_USER" cp "$APP_DIR"/config/logging_orig.conf "$APP_DIR"/config/logging.conf
-
+echo 
 echo " Done."
 echo
+
+# Create log directory if it doesn't exist
+if [ ! -d "$LOG_DIR" ]; then
+  echo " - Creating the log directory: $LOG_DIR..."
+  sudo mkdir -p "$LOG_DIR"
+  sudo chown wrowfusion:wrowfusion "$LOG_DIR"
+  sudo chmod 755 "$LOG_DIR"
+  echo
+  echo " Done."
+  echo
+fi
 
 ## Create WRowFusion dashboard systemd service
 section_divider "Configuring WRowFusion Dashboard to launch at system start-up..."
