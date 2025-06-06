@@ -87,7 +87,7 @@ restore_backup() {
     mv "$TMP_BACKUP_DIR" "$APP_DIR"
     echo " - Rollback complete."
     echo " - Exiting"
-  elif [ -d "$APP_DIR" ]
+  elif [ -d "$APP_DIR" ]; then
     echo " - Install failed. Previous installation remains unchanged." >&2
   else
     echo " - Install failed. Exiting." >&2
