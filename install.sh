@@ -219,16 +219,16 @@ declare -A REQUIRED_VARS=(
   ["WRFD_LOG_DIR"]="$LOG_DIR"
 )
 
-mkdir -p "$(dirname "$ENV_FILE_PATH")"
+mkdir -p "$(dirname "$SERVICE_ENV_FILE_PATH")"
 # Ensure .env file exists
-if [ ! -f "$ENV_FILE_PATH" ]; then
-  touch "$ENV_FILE_PATH"
+if [ ! -f "$SERVICE_ENV_FILE_PATH" ]; then
+  touch "$SERVICE_ENV_FILE_PATH"
 fi
 
 # Check and add missing keys
 for KEY in "${!REQUIRED_VARS[@]}"; do
-  if ! grep -q "^${KEY}=" "$ENV_FILE_PATH"; then
-    echo "${KEY}=${REQUIRED_VARS[$KEY]}" >> "$ENV_FILE_PATH"
+  if ! grep -q "^${KEY}=" "$SERVICE_ENV_FILE_PATH"; then
+    echo "${KEY}=${REQUIRED_VARS[$KEY]}" >> "$SERVICE_ENV_FILE_PATH"
   fi
 done
 echo " Done."
@@ -262,7 +262,7 @@ echo " - Launch the dashboard app at start up..."
 cp "$APP_DIR"/config/wrowfusion-dashboard.service "$TEMP_DIR"/wrowfusion-dashboard.service
 sed -i 's@#REPO_DIR#@'"$APP_DIR"'@g' "$TEMP_DIR"/wrowfusion-dashboard.service
 sed -i 's@#APP_USER#@'"$APP_USER"'@g' "$TEMP_DIR"/wrowfusion-dashboard.service
-sed -i 's@#ENV_FILE_PATH#@'"$ENV_FILE_PATH"'@g' "$TEMP_DIR"/wrowfusion-dashboard.service
+sed -i 's@#SERVICE_ENV_FILE_PATH#@'"$SERVICE_ENV_FILE_PATH"'@g' "$TEMP_DIR"/wrowfusion-dashboard.service
 sudo mv "$TEMP_DIR"/wrowfusion-dashboard.service /etc/systemd/system/wrowfusion-dashboard.service
 sudo chmod 644 /etc/systemd/system/wrowfusion-dashboard.service
 sudo systemctl daemon-reload

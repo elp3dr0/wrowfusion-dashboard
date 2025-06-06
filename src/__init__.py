@@ -12,13 +12,11 @@ log_path = pathlib.Path(log_dir) / "wrowfusion-dashboard.log"
 logging.config.fileConfig(str(logger_config_path), defaults={"log_path": str(log_path)}, disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
 
-from flask import Blueprint, Flask
-from dotenv import load_dotenv
+from flask import Flask
 from src.routes import register_routes
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
 
 def create_dashboard_app():
     app = Flask(
