@@ -51,7 +51,7 @@ section_divider "Creating a temporary working directory and loading the installa
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/wrowfusion-dashboard.conf"
-EXAMPLE_CONFIG_FILE="$SCRIPT_DIR/wrowfusion-dashboard.example.conf"
+EXAMPLE_CONFIG_FILE="$SCRIPT_DIR/wrowfusion-dashboard_example.conf"
 
 if [ ! -f "$CONFIG_FILE" ]; then
   echo
