@@ -50,7 +50,7 @@ def select_user() -> ResponseReturnValue:
 
         # Validate against API
         try:
-            validation_api_resp = requests.post(f"{api_base}/validate", json={"user_id": user_id})
+            validation_api_resp = requests.post(f"{api_base}/users/validate/", json={"id": user_id})
             validation_api_resp.raise_for_status()
             valid = validation_api_resp.json().get("valid", False)
         except Exception as e:
@@ -119,7 +119,8 @@ def add_user_route():
             if not isinstance(users_json, dict):
                 raise ValueError("Unexpected response format from backend.")
             
-            user_id = users_json.get("id")
+            user_dict = users_json.get("user", {})
+            user_id = user_dict.get("id")
             if not user_id:
                 raise ValueError("User ID not returned from backend")
 
