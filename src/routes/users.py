@@ -41,21 +41,33 @@ def select_user() -> ResponseReturnValue:
         user_id = request.form.get("user_id")
         if not user_id:
             current_app.logger.warning("No user selected in select user form submission.")
-            return render_template("select_user.html", users=[], error="No user selected.")
+            success, users = get_users_from_backend()
+            if not success:
+                current_app.logger.warning("Failed to fetch users from backend API.")
+                users = []
+            return render_template("select_user.html", users=users, error="No user selected.")
         stay_logged_in = request.form.get("stay_logged_in")
 
         # Validate against API
         try:
-            validation_api_resp = requests.post(f"{api_base}/validate_user", json={"user_id": user_id})
+            validation_api_resp = requests.post(f"{api_base}/validate", json={"user_id": user_id})
             validation_api_resp.raise_for_status()
             valid = validation_api_resp.json().get("valid", False)
         except Exception as e:
             current_app.logger.warning(f"Failed to validate user {user_id}: {e}")
-            return render_template("select_user.html", users=[], error="Error validating user.")
+            success, users = get_users_from_backend()
+            if not success:
+                current_app.logger.warning("Failed to fetch users from backend API.")
+                users = []
+            return render_template("select_user.html", users=users, error="Error validating user.")
         
         if not valid:
             current_app.logger.warning(f"User {user_id} could not be selected; invalid user id.")
-            return render_template("select_user.html", users=[], error="Invalid user selected.")
+            success, users = get_users_from_backend()
+            if not success:
+                current_app.logger.warning("Failed to fetch users from backend API.")
+                users = []
+            return render_template("select_user.html", users=users, error="Invalid user selected.")
 
         session["user_id"] = user_id
         flask_resp = redirect(url_for("rowing.show_rowing_page", user=user_id))
@@ -81,6 +93,7 @@ def select_user() -> ResponseReturnValue:
 def add_user_route():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
+        stay_logged_in = request.form.get("stay_logged_in")
 
         if not username:
             flash("User name is required.", "error")
@@ -115,8 +128,15 @@ def add_user_route():
             return redirect(url_for("users.add_user_route"))
 
         session["user_id"] = user_id
+        flask_resp = redirect(url_for("rowing.show_rowing_page", user=user_id))
+
+        if stay_logged_in:
+            flask_resp.set_cookie("stay_logged_in_user_id", user_id, max_age=60*60*24*60)
+        else:
+            flask_resp.delete_cookie("stay_logged_in_user_id")
+
         current_app.logger.info(f"New user added via API and logged in: {username} (ID: {user_id})")
         flash(f"Welcome, {username}!", "success")
-        return redirect(url_for("rowing.show_rowing_page"))
+        return flask_resp
 
     return render_template("add_user.html")
