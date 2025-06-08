@@ -1,23 +1,31 @@
 from flask import Blueprint, request, redirect, url_for, render_template, session, current_app
 import requests
 import os
+from src.utils.backend_api import get_user_from_backend
 
 rowing_bp = Blueprint("rowing", __name__)
 
 @rowing_bp.route("/rowing")
 def show_rowing_page():
-    user_id = session.get("user_id")
     websocket_port = os.getenv("WRFD_WROWFUSION_WEBSOCKET_PORT", 8765)
-    if not user_id:
+
+    user_id_raw = session.get("user_id")
+    if not user_id_raw:
         cookie_user_id = request.cookies.get("stay_logged_in_user_id")
         if cookie_user_id:
-            # Optional: Validate user_id with backend API before trusting it
+            try:
+                cookie_user_id_int = int(cookie_user_id)
+            except ValueError:
+                current_app.logger.warning("Invalid user_id cookie format.")
+                return redirect(url_for("users.select_user"))
+            
             api_base = current_app.config["BACKEND_API_URL"]
             try:
-                resp = requests.get(f"{api_base}/users/{cookie_user_id}")
-                if resp.ok and resp.json().get("id") == int(cookie_user_id):
-                    session["user_id"] = cookie_user_id
-                    user_id = cookie_user_id
+                success, user = get_user_from_backend(cookie_user_id_int)
+                if success and user.get("id") == cookie_user_id_int:
+                    session["user_id"] = cookie_user_id_int
+                    session["username"] = user.get("username")  # Optional: populate this now to save work later
+                    user_id_raw = cookie_user_id_int
                 else:
                     return redirect(url_for("users.select_user"))
             except Exception as e:
@@ -26,4 +34,18 @@ def show_rowing_page():
         else:
             return redirect(url_for("users.select_user"))
 
-    return render_template("rowing.html", user_id=user_id, ws_port=websocket_port)
+    try:
+        user_id = int(user_id_raw)
+    except (TypeError, ValueError):
+        current_app.logger.warning("Invalid user_id in session.")
+        return redirect(url_for("users.select_user"))
+
+    username = session.get("username")
+    if not username:
+        success, user = get_user_from_backend(user_id)
+        if success:
+            username = user.get("username")
+        else:
+            return redirect(url_for("users.select_user"))  
+
+    return render_template("rowing.html", user_id=user_id, username=username, ws_port=websocket_port)
