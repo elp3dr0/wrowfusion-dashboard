@@ -103,7 +103,7 @@ def add_user_route():
         payload = {"username": username}
 
         try:
-            users_api_resp = requests.post(f"{api_base}/users", json=payload)
+            users_api_resp = requests.post(f"{api_base}/users/", json=payload)
             if users_api_resp.status_code == 409:
                 flash("That user name is already taken.", "error")
                 current_app.logger.warning(f"Add user failed - username already exists: '{username}'")
@@ -113,9 +113,10 @@ def add_user_route():
             try:
                 users_json = users_api_resp.json()
             except ValueError:
+                current_app.logger.error(f"Backend returned non-JSON response: {users_api_resp.text}")
                 raise ValueError("Backend returned invalid JSON")
             
-            if not isinstance(users_api_resp, dict):
+            if not isinstance(users_json, dict):
                 raise ValueError("Unexpected response format from backend.")
             
             user_id = users_json.get("id")
