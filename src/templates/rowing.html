@@ -6,7 +6,7 @@
   {% if username %}
     <p class="mb-4 text-lg">Logged in as: <strong>{{ username }}</strong></p>
   {% endif %}
-  
+
   <div class="grid grid-cols-2 gap-4 text-lg">
     <div>Stroke Rate: <span id="stroke_rate_pm">--</span> spm</div>
     <div>Stroke Count: <span id="stroke_count">--</span></div>
@@ -25,7 +25,8 @@
 {% block scripts %}
 <script>
   const ws_scheme = location.protocol === "https:" ? "wss" : "ws";
-  const ws = new WebSocket(`${ws_scheme}://${location.hostname}:${{ ws_port }}`);
+  const ws_port_js = {{ ws_port | tojson }};
+  const ws = new WebSocket(`${ws_scheme}://${location.hostname}:${ws_port_js}`);
 
   ws.onmessage = (event) => {
     try {
